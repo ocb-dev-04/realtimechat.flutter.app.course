@@ -1,13 +1,118 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
-class ChatPage extends StatelessWidget {
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:real_time_chat/widgets/custom_inputs.dart';
+
+class ChatPage extends StatefulWidget {
   const ChatPage({Key? key}) : super(key: key);
 
   @override
+  State<ChatPage> createState() => _ChatPageState();
+}
+
+class _ChatPageState extends State<ChatPage> {
+  late TextEditingController _textController;
+  late FocusNode _focus;
+
+  void _handleSubmit(String submmit) {
+    // final typedValue = _textController.text;
+    if (submmit.isEmpty) {
+      _focus.requestFocus();
+      return;
+    }
+
+    debugPrint(submmit);
+    _textController.clear();
+    _focus.requestFocus();
+  }
+
+  @override
+  void initState() {
+    _textController = TextEditingController();
+    _focus = FocusNode();
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Chat page'),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: .2,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.black,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Column(
+          children: <Widget>[
+            const CircleAvatar(
+              child: Text('IN'),
+              radius: 12,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Nombre de usuario',
+              style: Theme.of(context).textTheme.caption!.copyWith(
+                    color: Colors.black,
+                  ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          Flexible(
+            child: ListView.builder(
+              physics: const BouncingScrollPhysics(),
+              itemCount: 100,
+              reverse: true,
+              itemBuilder: (_, int index) {
+                return Text(index.toString());
+              },
+            ),
+          ),
+          const Divider(),
+          SafeArea(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: TextField(
+                      controller: _textController,
+                      focusNode: _focus,
+                      decoration: const InputDecoration.collapsed(
+                        hintText: 'Type something...',
+                      ),
+                      onSubmitted: _handleSubmit,
+                      onChanged: (String vale) {
+                        // TODO: to set socket value in typing...
+                      },
+                    ),
+                  ),
+                  Platform.isIOS
+                      ? CupertinoButton(
+                          child: const Text('Send'),
+                          onPressed: () {},
+                        )
+                      : IconButton(
+                          icon: const Icon(
+                            Icons.send,
+                            color: Colors.blue,
+                          ),
+                          onPressed: () {},
+                        ),
+                ],
+              ),
+            ),
+          )
+        ],
       ),
     );
   }
