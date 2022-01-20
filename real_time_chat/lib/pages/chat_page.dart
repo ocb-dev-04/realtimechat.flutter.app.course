@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:real_time_chat/widgets/custom_inputs.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({Key? key}) : super(key: key);
@@ -14,6 +13,8 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   late TextEditingController _textController;
   late FocusNode _focus;
+
+  bool canSend = false;
 
   void _handleSubmit(String submmit) {
     // final typedValue = _textController.text;
@@ -30,6 +31,16 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     _textController = TextEditingController();
+    _textController.addListener(() {
+      final text = _textController.text;
+      if (text.isEmpty) {
+        canSend = false;
+        setState(() {});
+      } else {
+        canSend = true;
+        setState(() {});
+      }
+    });
     _focus = FocusNode();
     super.initState();
   }
@@ -77,10 +88,14 @@ class _ChatPageState extends State<ChatPage> {
               },
             ),
           ),
-          const Divider(),
           SafeArea(
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Row(
                 children: [
                   Flexible(
@@ -96,17 +111,29 @@ class _ChatPageState extends State<ChatPage> {
                       },
                     ),
                   ),
-                  Platform.isIOS
+                  !Platform.isIOS
                       ? CupertinoButton(
                           child: const Text('Send'),
-                          onPressed: () {},
+                          disabledColor: Colors.grey,
+                          onPressed: canSend
+                              ? () {
+                                  print('Sending...');
+                                }
+                              : null,
                         )
                       : IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.send,
-                            color: Colors.blue,
+                            color: canSend ? Colors.blue : Colors.grey,
                           ),
-                          onPressed: () {},
+                          disabledColor: Colors.grey,
+                          splashColor: Colors.transparent,
+                          highlightColor: Colors.transparent,
+                          onPressed: canSend
+                              ? () {
+                                  print('Sending...');
+                                }
+                              : null,
                         ),
                 ],
               ),
