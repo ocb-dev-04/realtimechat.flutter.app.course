@@ -1,10 +1,10 @@
-class Usuario {
+class User {
   bool online;
   String email;
   String name;
   String uid;
 
-  Usuario({
+  User({
     required this.online,
     required this.email,
     required this.name,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:real_time_chat/models/usuario.dart';
+import 'package:real_time_chat/models/user.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class UsersPage extends StatefulWidget {
@@ -13,12 +13,12 @@ class _UsersPageState extends State<UsersPage> {
   late RefreshController _refreshController;
   final bool connected = true;
 
-  final users = <Usuario>[
-    Usuario(uid: '1', name: 'Fulano de tal', email: 'fulano@test.com', online: true),
-    Usuario(uid: '2', name: 'Fulanito de tal', email: 'fulano@test.com', online: false),
-    Usuario(uid: '3', name: 'Fulanote de tal', email: 'fulano@test.com', online: true),
-    Usuario(uid: '4', name: 'Fulanototote de tal', email: 'fulano@test.com', online: false),
-    Usuario(uid: '5', name: 'Fulaninito de tal', email: 'fulano@test.com', online: false),
+  final users = <User>[
+    User(uid: '1', name: 'Fulano de tal', email: 'fulano@test.com', online: true),
+    User(uid: '2', name: 'Fulanito de tal', email: 'fulano@test.com', online: false),
+    User(uid: '3', name: 'Fulanote de tal', email: 'fulano@test.com', online: true),
+    User(uid: '4', name: 'Fulanototote de tal', email: 'fulano@test.com', online: false),
+    User(uid: '5', name: 'Fulaninito de tal', email: 'fulano@test.com', online: false),
   ];
 
   @override
@@ -101,7 +101,7 @@ class _UsersListBuilder extends StatelessWidget {
     required this.users,
   }) : super(key: key);
 
-  final List<Usuario> users;
+  final List<User> users;
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +123,7 @@ class _UserListTile extends StatelessWidget {
     required this.user,
   }) : super(key: key);
 
-  final Usuario user;
+  final User user;
 
   @override
   Widget build(BuildContext context) {

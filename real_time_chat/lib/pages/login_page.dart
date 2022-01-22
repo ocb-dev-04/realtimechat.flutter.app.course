@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:real_time_chat/services/auth_services.dart';
 import 'package:real_time_chat/widgets/btns.dart';
 import 'package:real_time_chat/widgets/custom_inputs.dart';
 import 'package:real_time_chat/widgets/labels.dart';
@@ -77,11 +79,12 @@ class __FormState extends State<_Form> {
           const SizedBox(height: 20),
           Buttom(
             label: 'Acceder',
-            onPressed: () {
+            onPressed: () async {
               debugPrint('Accediendo...');
-              // TODO:  implement access
+              final authService = Provider.of<AuthServices>(context, listen: false);
+              final result = await authService.login(_emailController.text, _passwordController.text);
+              if (!result) return;
 
-              // then, goto users page
               Navigator.pushReplacementNamed(context, 'users');
             },
           ),
