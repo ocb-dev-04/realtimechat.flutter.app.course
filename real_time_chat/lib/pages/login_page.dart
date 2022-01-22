@@ -58,6 +58,8 @@ class __FormState extends State<_Form> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthServices>(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Column(
@@ -80,9 +82,12 @@ class __FormState extends State<_Form> {
           Buttom(
             label: 'Acceder',
             onPressed: () async {
-              debugPrint('Accediendo...');
-              final authService = Provider.of<AuthServices>(context, listen: false);
-              final result = await authService.login(_emailController.text, _passwordController.text);
+              FocusScope.of(context).unfocus();
+
+              final result = await authService.login(
+                _emailController.text.trim(),
+                _passwordController.text.trim(),
+              );
               if (!result) return;
 
               Navigator.pushReplacementNamed(context, 'users');
