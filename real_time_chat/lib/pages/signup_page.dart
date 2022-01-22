@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:real_time_chat/helpers/alerts.dart';
+import 'package:real_time_chat/services/auth_services.dart';
 import 'package:real_time_chat/widgets/btns.dart';
 import 'package:real_time_chat/widgets/custom_inputs.dart';
 import 'package:real_time_chat/widgets/labels.dart';
@@ -11,6 +14,7 @@ class SignupPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: const Color(0xffF2F2F2),
       body: SafeArea(
@@ -57,6 +61,8 @@ class __FormState extends State<_Form> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthServices>(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Column(
@@ -84,12 +90,20 @@ class __FormState extends State<_Form> {
           const SizedBox(height: 20),
           Buttom(
             label: 'Acceder',
-            onPressed: () {
-              debugPrint('Accediendo...');
-              // TODO:  implement access
+            onPressed: () async {
+              FocusScope.of(context).unfocus();
 
-              // then, goto users page
-              Navigator.pushReplacementNamed(context, 'users');
+              final result = await authService.signup(
+                _nameController.text.trim(),
+                _emailController.text.trim(),
+                _passwordController.text.trim(),
+              );
+
+              if (result) {
+                Navigator.pushReplacementNamed(context, 'users');
+              } else {
+                showAlert(context, 'Ups.. error', 'Revisa tus credenciales');
+              }
             },
           ),
         ],

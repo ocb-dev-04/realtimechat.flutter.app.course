@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:real_time_chat/helpers/alerts.dart';
 import 'package:real_time_chat/services/auth_services.dart';
 import 'package:real_time_chat/widgets/btns.dart';
 import 'package:real_time_chat/widgets/custom_inputs.dart';
@@ -88,9 +89,12 @@ class __FormState extends State<_Form> {
                 _emailController.text.trim(),
                 _passwordController.text.trim(),
               );
-              if (!result) return;
 
-              Navigator.pushReplacementNamed(context, 'users');
+              if (result) {
+                Navigator.pushReplacementNamed(context, 'users');
+              } else {
+                showAlert(context, 'Ups.. error', 'Revisa tus credenciales');
+              }
             },
           ),
         ],

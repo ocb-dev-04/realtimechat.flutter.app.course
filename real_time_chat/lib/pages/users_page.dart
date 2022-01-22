@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:real_time_chat/models/user.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:real_time_chat/services/auth_services.dart';
 
 class UsersPage extends StatefulWidget {
   const UsersPage({Key? key}) : super(key: key);
@@ -11,6 +13,9 @@ class UsersPage extends StatefulWidget {
 
 class _UsersPageState extends State<UsersPage> {
   late RefreshController _refreshController;
+  late User user;
+  late AuthServices authServices;
+
   final bool connected = true;
 
   final users = <User>[
@@ -24,6 +29,9 @@ class _UsersPageState extends State<UsersPage> {
   @override
   void initState() {
     _refreshController = RefreshController(initialRefresh: false);
+    authServices = Provider.of<AuthServices>(context, listen: false);
+    user = authServices.currenUser!;
+
     super.initState();
   }
 
@@ -44,11 +52,14 @@ class _UsersPageState extends State<UsersPage> {
             Icons.exit_to_app,
             color: Colors.black,
           ),
-          onPressed: () {},
+          onPressed: () async {
+            await authServices.logout();
+            Navigator.pushReplacementNamed(context, 'login');
+          },
         ),
-        title: const Text(
-          'Mi nombre',
-          style: TextStyle(color: Colors.black),
+        title: Text(
+          user.name,
+          style: const TextStyle(color: Colors.black),
         ),
         actions: [
           Padding(
