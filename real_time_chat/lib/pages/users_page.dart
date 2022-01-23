@@ -34,7 +34,7 @@ class _UsersPageState extends State<UsersPage> {
   void initState() {
     _refreshController = RefreshController(initialRefresh: false);
     authServices = Provider.of<AuthServices>(context, listen: false);
-    user = authServices.currenUser!;
+    user = authServices.currenUser;
     _loadUsers();
 
     super.initState();

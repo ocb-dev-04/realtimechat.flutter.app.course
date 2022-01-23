@@ -52,6 +52,17 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     senderUser = authServices.currenUser;
 
     socketServices = Provider.of<SocketServices>(context, listen: false);
+    socketServices.socket.on('send-message', (data) {
+      debugPrint('Mensaje nuevo $data');
+      final newMessage = Message(
+        uid: data['from'],
+        text: data['message'],
+        timeStamp: data['timeStamp'],
+        controller: animationController,
+      );
+      messages.insert(0, newMessage);
+      newMessage.controller.forward();
+    });
 
     super.initState();
   }
@@ -127,26 +138,25 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
         children: [
           Flexible(
             child: Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
               child: ListView.builder(
                 physics: const BouncingScrollPhysics(),
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 shrinkWrap: true,
                 itemCount: messages.length,
                 reverse: true,
-                itemBuilder: (_, int index) {
-                  return MessageBody(
-                    message: messages[index],
-                    senderUid: senderUser.uid,
-                  );
-                },
+                itemBuilder: (_, int index) => MessageBody(
+                  message: messages[index],
+                  senderUid: senderUser.uid,
+                ),
               ),
             ),
           ),
           SafeArea(
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
               padding: const EdgeInsets.symmetric(horizontal: 10),
+              height: 50,
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey),
                 borderRadius: BorderRadius.circular(10),
@@ -215,7 +225,7 @@ class MessageBody extends StatelessWidget {
           alignment: message.uid == senderUid ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
             width: size.width * .8,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
             margin: const EdgeInsets.symmetric(vertical: 5),
             decoration: BoxDecoration(
               color: message.uid == senderUid ? Colors.white : Colors.blue,
