@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:real_time_chat/helpers/alerts.dart';
 import 'package:real_time_chat/services/auth_services.dart';
+import 'package:real_time_chat/services/socket_services.dart';
 import 'package:real_time_chat/widgets/btns.dart';
 import 'package:real_time_chat/widgets/custom_inputs.dart';
 import 'package:real_time_chat/widgets/labels.dart';
@@ -60,6 +61,7 @@ class __FormState extends State<_Form> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthServices>(context);
+    final socketService = Provider.of<SocketServices>(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -91,6 +93,7 @@ class __FormState extends State<_Form> {
               );
 
               if (result) {
+                socketService.connect();
                 Navigator.pushReplacementNamed(context, 'users');
               } else {
                 showAlert(context, 'Ups.. error', 'Revisa tus credenciales');

@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:real_time_chat/models/user.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:real_time_chat/services/auth_services.dart';
+import 'package:real_time_chat/services/chat_services.dart';
+import 'package:real_time_chat/services/socket_services.dart';
+import 'package:real_time_chat/services/users_services.dart';
 
 class UsersPage extends StatefulWidget {
   const UsersPage({Key? key}) : super(key: key);
@@ -14,34 +17,40 @@ class UsersPage extends StatefulWidget {
 class _UsersPageState extends State<UsersPage> {
   late RefreshController _refreshController;
   late User user;
+
   late AuthServices authServices;
+  late SocketServices socketServices;
+  UserServices userServices = UserServices();
 
-  final bool connected = true;
+  bool _isLoading = false;
+  set isLoading(bool value) {
+    _isLoading = value;
+    setState(() {});
+  }
 
-  final users = <User>[
-    User(uid: '1', name: 'Fulano de tal', email: 'fulano@test.com', online: true),
-    User(uid: '2', name: 'Fulanito de tal', email: 'fulano@test.com', online: false),
-    User(uid: '3', name: 'Fulanote de tal', email: 'fulano@test.com', online: true),
-    User(uid: '4', name: 'Fulanototote de tal', email: 'fulano@test.com', online: false),
-    User(uid: '5', name: 'Fulaninito de tal', email: 'fulano@test.com', online: false),
-  ];
+  List<User> users = [];
 
   @override
   void initState() {
     _refreshController = RefreshController(initialRefresh: false);
     authServices = Provider.of<AuthServices>(context, listen: false);
     user = authServices.currenUser!;
+    _loadUsers();
 
     super.initState();
   }
 
   Future<void> _loadUsers() async {
-    await Future.delayed(const Duration(seconds: 1));
+    users = await userServices.getUsers();
+    setState(() {});
     _refreshController.refreshCompleted();
   }
 
   @override
   Widget build(BuildContext context) {
+    socketServices = Provider.of<SocketServices>(context);
+    bool connected = socketServices.serverStatus == ServerStatus.online;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -53,6 +62,7 @@ class _UsersPageState extends State<UsersPage> {
             color: Colors.black,
           ),
           onPressed: () async {
+            socketServices.disconnect();
             await authServices.logout();
             Navigator.pushReplacementNamed(context, 'login');
           },
@@ -72,11 +82,11 @@ class _UsersPageState extends State<UsersPage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+        padding: const EdgeInsets.symmetric(horizontal: 5.0),
         child: SmartRefresher(
           controller: _refreshController,
           enablePullDown: true,
-          onRefresh: _loadUsers,
+          onRefresh: () => _loadUsers(),
           header: const WaterDropHeader(
             complete: Text(
               'All updated',
@@ -150,6 +160,11 @@ class _UserListTile extends StatelessWidget {
         height: 10,
         decoration: BoxDecoration(color: user.online ? Colors.green : Colors.red, borderRadius: BorderRadius.circular(50)),
       ),
+      onTap: () {
+        final chatServices = Provider.of<ChatServices>(context, listen: false);
+        chatServices.toUser = user;
+        Navigator.pushNamed(context, 'chat');
+      },
     );
   }
 }

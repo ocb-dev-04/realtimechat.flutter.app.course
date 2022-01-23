@@ -10,7 +10,7 @@ import 'package:real_time_chat/models/login_response.dart';
 import 'package:real_time_chat/models/user.dart';
 
 class AuthServices with ChangeNotifier {
-  User? currenUser;
+  late User currenUser;
 
   bool _loading = false;
   bool get loading => _loading;

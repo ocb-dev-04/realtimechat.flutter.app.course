@@ -2,7 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:real_time_chat/models/message.dart';
+import 'package:real_time_chat/models/user.dart';
+import 'package:real_time_chat/services/auth_services.dart';
+import 'package:real_time_chat/services/chat_services.dart';
+import 'package:real_time_chat/services/socket_services.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({Key? key}) : super(key: key);
@@ -16,29 +21,14 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   late AnimationController animationController;
   late FocusNode _focus;
 
+  late User chatUser;
+  late User senderUser;
+  late ChatServices chatServices;
+  late AuthServices authServices;
+  late SocketServices socketServices;
+
   bool canSend = false;
   final messages = <Message>[];
-
-  void _handleSubmit() {
-    final typedValue = _textController.text.trimLeft().trimRight();
-    _focus.requestFocus();
-
-    if (typedValue.isEmpty) {
-      return;
-    }
-
-    final newMessage = Message(
-      uid: '123',
-      text: typedValue,
-      sender: 'Oscar Ch. B',
-      timeStamp: DateTime.now().toIso8601String(),
-      controller: animationController,
-    );
-    newMessage.controller.forward();
-
-    messages.insert(0, newMessage);
-    _textController.clear();
-  }
 
   @override
   void initState() {
@@ -55,6 +45,14 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
       }
     });
     _focus = FocusNode();
+
+    chatServices = Provider.of<ChatServices>(context, listen: false);
+    authServices = Provider.of<AuthServices>(context, listen: false);
+    chatUser = chatServices.toUser!;
+    senderUser = authServices.currenUser;
+
+    socketServices = Provider.of<SocketServices>(context, listen: false);
+
     super.initState();
   }
 
@@ -64,6 +62,33 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     animationController.dispose();
 
     super.dispose();
+  }
+
+  void _handleSubmit() {
+    final typedValue = _textController.text.trimLeft().trimRight();
+    _focus.requestFocus();
+
+    if (typedValue.isEmpty) {
+      return;
+    }
+
+    final newMessage = Message(
+      uid: senderUser.uid,
+      text: typedValue,
+      timeStamp: DateTime.now().millisecondsSinceEpoch,
+      controller: animationController,
+    );
+    newMessage.controller.forward();
+
+    messages.insert(0, newMessage);
+    socketServices.socket.emit('send-message', {
+      'from': senderUser.uid,
+      'to': chatUser.uid,
+      'message': typedValue,
+      'timeStamp': DateTime.now().millisecondsSinceEpoch,
+    });
+
+    _textController.clear();
   }
 
   @override
@@ -82,13 +107,13 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
         ),
         title: Column(
           children: <Widget>[
-            const CircleAvatar(
-              child: Text('IN'),
+            CircleAvatar(
+              child: Text(chatUser.name.substring(0, 2).toUpperCase()),
               radius: 12,
             ),
             const SizedBox(height: 2),
             Text(
-              'Nombre de usuario',
+              chatUser.name,
               style: Theme.of(context).textTheme.caption!.copyWith(
                     color: Colors.black,
                   ),
@@ -110,7 +135,10 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
                 itemCount: messages.length,
                 reverse: true,
                 itemBuilder: (_, int index) {
-                  return MessageBody(message: messages[index]);
+                  return MessageBody(
+                    message: messages[index],
+                    senderUid: senderUser.uid,
+                  );
                 },
               ),
             ),
@@ -166,9 +194,11 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
 class MessageBody extends StatelessWidget {
   const MessageBody({
     Key? key,
+    required this.senderUid,
     required this.message,
   }) : super(key: key);
 
+  final String senderUid;
   final Message message;
 
   @override
@@ -182,29 +212,29 @@ class MessageBody extends StatelessWidget {
           curve: Curves.elasticInOut,
         ),
         child: Align(
-          alignment: message.uid == '123' ? Alignment.centerRight : Alignment.centerLeft,
+          alignment: message.uid == senderUid ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
             width: size.width * .8,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             margin: const EdgeInsets.symmetric(vertical: 5),
             decoration: BoxDecoration(
-              color: message.uid == '123' ? Colors.white : Colors.blue,
+              color: message.uid == senderUid ? Colors.white : Colors.blue,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: Colors.blue),
             ),
             child: Column(
-              crossAxisAlignment: message.uid == '123' ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: message.uid == senderUid ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Text(
                   message.text,
                   style: Theme.of(context).textTheme.bodyText1!.copyWith(
-                        color: message.uid == '123' ? Colors.blue : Colors.white,
+                        color: message.uid == senderUid ? Colors.blue : Colors.white,
                       ),
                 ),
                 Text(
-                  message.timeStamp,
+                  message.timeStamp.toString(),
                   style: Theme.of(context).textTheme.caption!.copyWith(
-                        color: message.uid == '123' ? Colors.blue : Colors.white,
+                        color: message.uid == senderUid ? Colors.blue : Colors.white,
                         fontSize: 10,
                       ),
                 ),
