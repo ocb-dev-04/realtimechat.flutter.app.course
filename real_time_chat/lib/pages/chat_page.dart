@@ -18,7 +18,6 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   late TextEditingController _textController;
-  late AnimationController animationController;
   late FocusNode _focus;
 
   late User chatUser;
@@ -33,7 +32,6 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   @override
   void initState() {
     _textController = TextEditingController();
-    animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
     _textController.addListener(() {
       final text = _textController.text;
       if (text.trimLeft().trimRight().isEmpty) {
@@ -58,9 +56,10 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
         uid: data['from'],
         text: data['message'],
         timeStamp: data['timeStamp'],
-        controller: animationController,
+        controller: AnimationController(vsync: this, duration: const Duration(milliseconds: 500)),
       );
       messages.insert(0, newMessage);
+      setState(() {});
       newMessage.controller.forward();
     });
 
@@ -70,8 +69,11 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   @override
   void dispose() {
     _textController.dispose();
-    animationController.dispose();
 
+    for (final message in messages) {
+      message.controller.dispose();
+    }
+    socketServices.socket.off('send-message');
     super.dispose();
   }
 
@@ -87,7 +89,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
       uid: senderUser.uid,
       text: typedValue,
       timeStamp: DateTime.now().millisecondsSinceEpoch,
-      controller: animationController,
+      controller: AnimationController(vsync: this, duration: const Duration(milliseconds: 500)),
     );
     newMessage.controller.forward();
 
@@ -214,6 +216,7 @@ class MessageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
     return FadeTransition(
       opacity: message.controller,
       child: SizeTransition(
@@ -237,6 +240,7 @@ class MessageBody extends StatelessWidget {
               children: [
                 Text(
                   message.text,
+                  textAlign: message.uid == senderUid ? TextAlign.end : TextAlign.start,
                   style: Theme.of(context).textTheme.bodyText1!.copyWith(
                         color: message.uid == senderUid ? Colors.blue : Colors.white,
                       ),
