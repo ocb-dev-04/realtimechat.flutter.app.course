@@ -27,7 +27,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   late SocketServices socketServices;
 
   bool canSend = false;
-  final messages = <Message>[];
+  List<Message> messages = <Message>[];
 
   @override
   void initState() {
@@ -52,16 +52,17 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     socketServices = Provider.of<SocketServices>(context, listen: false);
     socketServices.socket.on('send-message', (data) {
       debugPrint('Mensaje nuevo $data');
-      final newMessage = Message(
-        uid: data['from'],
-        text: data['message'],
-        timeStamp: data['timeStamp'],
-        controller: AnimationController(vsync: this, duration: const Duration(milliseconds: 500)),
+      final newMessage = Message.fromJson(data);
+      newMessage.animationController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 500),
       );
       messages.insert(0, newMessage);
       setState(() {});
-      newMessage.controller.forward();
+      newMessage.animationController?.forward();
     });
+
+    _loadHistorial();
 
     super.initState();
   }
@@ -71,10 +72,21 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     _textController.dispose();
 
     for (final message in messages) {
-      message.controller.dispose();
+      message.animationController?.dispose();
     }
     socketServices.socket.off('send-message');
     super.dispose();
+  }
+
+  Future<void> _loadHistorial() async {
+    final allMsg = await chatServices.getMessages(chatUser.uid);
+    messages = allMsg.map((Message e) {
+      e.animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500))..forward();
+      debugPrint('Mensaje ${e.message}');
+
+      return e;
+    }).toList();
+    setState(() {});
   }
 
   void _handleSubmit() {
@@ -86,20 +98,15 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     }
 
     final newMessage = Message(
-      uid: senderUser.uid,
-      text: typedValue,
-      timeStamp: DateTime.now().millisecondsSinceEpoch,
-      controller: AnimationController(vsync: this, duration: const Duration(milliseconds: 500)),
+      from: senderUser.uid,
+      to: chatUser.uid,
+      message: typedValue,
+      animationController: AnimationController(vsync: this, duration: const Duration(milliseconds: 500)),
     );
-    newMessage.controller.forward();
+    newMessage.animationController?.forward();
 
     messages.insert(0, newMessage);
-    socketServices.socket.emit('send-message', {
-      'from': senderUser.uid,
-      'to': chatUser.uid,
-      'message': typedValue,
-      'timeStamp': DateTime.now().millisecondsSinceEpoch,
-    });
+    socketServices.socket.emit('send-message', newMessage.toJson());
 
     _textController.clear();
   }
@@ -218,37 +225,37 @@ class MessageBody extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return FadeTransition(
-      opacity: message.controller,
+      opacity: message.animationController!,
       child: SizeTransition(
         sizeFactor: CurvedAnimation(
-          parent: message.controller,
+          parent: message.animationController!,
           curve: Curves.elasticInOut,
         ),
         child: Align(
-          alignment: message.uid == senderUid ? Alignment.centerRight : Alignment.centerLeft,
+          alignment: message.from == senderUid ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
             width: size.width * .8,
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
             margin: const EdgeInsets.symmetric(vertical: 5),
             decoration: BoxDecoration(
-              color: message.uid == senderUid ? Colors.white : Colors.blue,
+              color: message.from == senderUid ? Colors.white : Colors.blue,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: Colors.blue),
             ),
             child: Column(
-              crossAxisAlignment: message.uid == senderUid ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: message.from == senderUid ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Text(
-                  message.text,
-                  textAlign: message.uid == senderUid ? TextAlign.end : TextAlign.start,
+                  message.message,
+                  textAlign: message.from == senderUid ? TextAlign.end : TextAlign.start,
                   style: Theme.of(context).textTheme.bodyText1!.copyWith(
-                        color: message.uid == senderUid ? Colors.blue : Colors.white,
+                        color: message.from == senderUid ? Colors.blue : Colors.white,
                       ),
                 ),
                 Text(
-                  message.timeStamp.toString(),
+                  message.createdAt.toString(),
                   style: Theme.of(context).textTheme.caption!.copyWith(
-                        color: message.uid == senderUid ? Colors.blue : Colors.white,
+                        color: message.from == senderUid ? Colors.blue : Colors.white,
                         fontSize: 10,
                       ),
                 ),
